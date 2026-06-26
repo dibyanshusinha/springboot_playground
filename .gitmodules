@@ -1,0 +1,4 @@
+[submodule "api-spec"]
+	path = openapi/product-service
+	url = https://github.com/dibyanshusinha/product-api-spec.git
+	branch = main

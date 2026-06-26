@@ -1,0 +1,99 @@
+name: PR Build & Test
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+
+permissions:
+  pull-requests: write
+  issues: write
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run Build, UT & IUT
+        id: ut_iut
+        continue-on-error: true
+        run: |
+          mvn clean verify -Dspring.profiles.active=local
+
+      - name: Run E2E Tests
+        id: e2e
+        continue-on-error: true
+        run: |
+          touch target/e2e-triggered
+          mvn -f e2e/pom.xml verify
+
+      - name: Generate PR Comment Summary
+        if: always()
+        run: |
+          python3 scripts/parse_reports.py
+
+      - name: Post PR Comment
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'target/pr_comment.md';
+            if (fs.existsSync(path)) {
+              const body = fs.readFileSync(path, 'utf8');
+              try {
+                // Find if there's an existing bot comment to update
+                const { data: comments } = await github.rest.issues.listComments({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                });
+                
+                const botComment = comments.find(comment => 
+                  comment.user.type === 'Bot' && 
+                  comment.body.includes('PR Test & Coverage Report Summary')
+                );
+                
+                if (botComment) {
+                  await github.rest.issues.updateComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    comment_id: botComment.id,
+                    body: body
+                  });
+                  console.log("Updated existing PR comment.");
+                } else {
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: context.issue.number,
+                    body: body
+                  });
+                  console.log("Created new PR comment.");
+                }
+              } catch (error) {
+                console.log("Could not post comment to PR (likely due to read-only permissions on a fork PR):", error.message);
+              }
+            } else {
+              console.log("No PR comment file found to post.");
+            }
+
+      - name: Check Status and Fail Job if Needed
+        if: always()
+        run: |
+          if [ "${{ steps.ut_iut.outcome }}" != "success" ] || [ "${{ steps.e2e.outcome }}" != "success" ]; then
+            echo "One or more test suites failed."
+            exit 1
+          fi

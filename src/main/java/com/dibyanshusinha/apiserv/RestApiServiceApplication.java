@@ -1,13 +1,13 @@
-package com.mysampleproject.sample;
+package com.dibyanshusinha.apiserv;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class SampleApplication {
+public class RestApiServiceApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(SampleApplication.class, args);
+        SpringApplication.run(RestApiServiceApplication.class, args);
     }
 
 }
