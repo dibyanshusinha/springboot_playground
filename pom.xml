@@ -114,6 +114,14 @@
             <resource>
                 <directory>src/main/resources</directory>
             </resource>
+            <resource>
+                <directory>openapi/product-service</directory>
+                <targetPath>static/api-contract</targetPath>
+                <includes>
+                    <include>openapi.yaml</include>
+                    <include>components/**</include>
+                </includes>
+            </resource>
         </resources>
         <plugins>
             <plugin>

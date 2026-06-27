@@ -39,11 +39,10 @@ public class ApplicationStartupLogger {
                 Product API is running.
                 Local API:      {}
                 Network API:    {}
-                Swagger UI:     {}/swagger-ui.html
-                OpenAPI JSON:   {}/v3/api-docs
+                Swagger UI:     {}/api_docs
                 Health Check:   {}/actuator/health
                 ----------------------------------------------------------
-                """, startupUrls.localBaseUrl(), startupUrls.networkBaseUrl(), startupUrls.localBaseUrl(), startupUrls.localBaseUrl(), startupUrls.localBaseUrl());
+                """, startupUrls.localBaseUrl(), startupUrls.networkBaseUrl(), startupUrls.localBaseUrl(), startupUrls.localBaseUrl());
     }
 
     StartupUrls buildStartupUrls() {

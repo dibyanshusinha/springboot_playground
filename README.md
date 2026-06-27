@@ -42,7 +42,7 @@ The OpenAPI contract is the source of truth:
 openapi/product-service/openapi.yaml
 ```
 
-`openapi/product-service` is a git submodule backed by the independent Product API spec project. API designers can evolve that project separately, while this Spring Boot service consumes the pinned submodule revision to generate API interfaces and models. The contract is not duplicated under application resources; runtime docs are exposed by Springdoc from the application at `/v3/api-docs`.
+`openapi/product-service` is a git submodule backed by the independent Product API spec project. API designers can evolve that project separately, while this Spring Boot service consumes the pinned submodule revision to generate API interfaces and models. At runtime, `/api_docs` renders the packaged Product API contract with the server URL adjusted to the running Spring Boot app.
 
 The spec is split by responsibility:
 
@@ -129,8 +129,7 @@ Then start the API with the local profile:
 Useful local URLs:
 
 - API: `http://localhost:8080/v1/products`
-- Swagger UI: `http://localhost:8080/swagger-ui.html`
-- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
+- Swagger UI: `http://localhost:8080/api_docs`
 - Health: `http://localhost:8080/actuator/health`
 
 Local PostgreSQL JDBC URL:
@@ -150,16 +149,10 @@ mvn spring-boot:run
 Then open Swagger UI:
 
 ```text
-http://localhost:8080/swagger-ui.html
+http://localhost:8080/api_docs
 ```
 
-The raw OpenAPI JSON is available at:
-
-```text
-http://localhost:8080/v3/api-docs
-```
-
-If you are running the application with Docker Compose, the Swagger and OpenAPI URLs are the same because the API is exposed on local port `8080`.
+Swagger UI and test reporting both use the packaged Product API contract, so the application exposes one human-facing docs URL: `/api_docs`.
 
 ## Run with Docker Compose
 
@@ -272,7 +265,7 @@ This project separates test intent by confidence level:
 | Integration tests | Validate Spring wiring across controller, service, repository, Flyway, and database behavior. | Auto-generated route scenario coverage at `target/reports/api-scenario-coverage/index.html`. |
 | E2E tests | Validate real product-service workflows against a running application. | Auto-generated workflow scenario report at `target/reports/e2e-scenario-report/index.html`. |
 
-The standalone `e2e` Maven project starts the application with Docker Compose by default, waits for `/actuator/health`, fetches routes from `/v3/api-docs`, runs only E2E workflow tests against the configured base URL, generates the E2E HTML report, and stops the Docker Compose services afterward. The service module's `mvn verify` does not run E2E tests. Set `-De2e.skipDocker=true` when testing an already-running local app or deployed stage. E2E reports scenario results only; line coverage is intentionally not reported.
+The standalone `e2e` Maven project starts the application with Docker Compose by default, waits for `/actuator/health`, reads routes from the same packaged Product API contract used by Swagger UI, runs only E2E workflow tests against the configured base URL, generates the E2E HTML report, and stops the Docker Compose services afterward. The service module's `mvn verify` does not run E2E tests. Set `-De2e.skipDocker=true` when testing an already-running local app or deployed stage. E2E reports scenario results only; line coverage is intentionally not reported.
 
 ## Example requests
 

@@ -2,6 +2,7 @@ package com.dibyanshusinha.apiserv.e2e.testsupport;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -68,7 +69,8 @@ public class E2EScenarioReportExtension implements BeforeAllCallback, AfterTestE
     static final class E2EReport implements ExtensionContext.Store.CloseableResource {
 
         private static final Set<String> HTTP_METHODS = Set.of("get", "post", "put", "delete", "patch");
-        private final ObjectMapper objectMapper = new ObjectMapper();
+        private static final String OPENAPI_CONTRACT_PATH = "/api-contract/runtime-openapi.yaml";
+        private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
         private final HttpClient httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(5))
                 .build();
@@ -110,7 +112,7 @@ public class E2EScenarioReportExtension implements BeforeAllCallback, AfterTestE
 
         void registerOpenApiRoutes() {
             try {
-                HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl + "/v3/api-docs"))
+                HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl + OPENAPI_CONTRACT_PATH))
                         .timeout(Duration.ofSeconds(10))
                         .GET()
                         .build();
@@ -257,7 +259,8 @@ public class E2EScenarioReportExtension implements BeforeAllCallback, AfterTestE
                     .append(escape(data.generatedAt().toString()))
                     .append("</code>. Routes are discovered from <code>")
                     .append(escape(baseUrl))
-                    .append("/v3/api-docs</code>. E2E scenarios are workflow checks against the running service.</div>");
+                    .append(OPENAPI_CONTRACT_PATH)
+                    .append("</code>. E2E scenarios are workflow checks against the running service.</div>");
             html.append("<section class=\"hero\"><div class=\"hero-top\"><div><div class=\"overall ")
                     .append(overallClass)
                     .append("\">")
