@@ -69,6 +69,7 @@ public class E2EScenarioReportExtension implements BeforeAllCallback, AfterTestE
     static final class E2EReport implements ExtensionContext.Store.CloseableResource {
 
         private static final Set<String> HTTP_METHODS = Set.of("get", "post", "put", "delete", "patch");
+        private static final String API_CONTRACT_BASE_PATH = "/api-contract/";
         private static final String OPENAPI_CONTRACT_PATH = "/api-contract/openapi.yaml";
         private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
         private final HttpClient httpClient = HttpClient.newBuilder()
@@ -125,7 +126,7 @@ public class E2EScenarioReportExtension implements BeforeAllCallback, AfterTestE
                 Iterator<Map.Entry<String, JsonNode>> fields = paths.fields();
                 while (fields.hasNext()) {
                     Map.Entry<String, JsonNode> path = fields.next();
-                    Iterator<Map.Entry<String, JsonNode>> operations = path.getValue().fields();
+                    Iterator<Map.Entry<String, JsonNode>> operations = resolvePathItem(path.getValue()).fields();
                     while (operations.hasNext()) {
                         Map.Entry<String, JsonNode> operation = operations.next();
                         if (HTTP_METHODS.contains(operation.getKey())) {
@@ -138,6 +139,37 @@ public class E2EScenarioReportExtension implements BeforeAllCallback, AfterTestE
             } catch (InterruptedException ignored) {
                 Thread.currentThread().interrupt();
             }
+        }
+
+        private JsonNode resolvePathItem(JsonNode pathItem) throws IOException, InterruptedException {
+            JsonNode ref = pathItem.path("$ref");
+            if (!ref.isTextual()) {
+                return pathItem;
+            }
+
+            String refValue = ref.asText();
+            String[] refParts = refValue.split("#", 2);
+            if (refParts.length == 0 || !refParts[0].startsWith("./")) {
+                return pathItem;
+            }
+
+            String contractRelativePath = refParts[0].substring(2);
+            HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl + API_CONTRACT_BASE_PATH + contractRelativePath))
+                    .timeout(Duration.ofSeconds(10))
+                    .GET()
+                    .build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                return pathItem;
+            }
+
+            JsonNode resolved = objectMapper.readTree(response.body());
+            if (refParts.length == 2 && refParts[1].startsWith("/")) {
+                for (String segment : refParts[1].substring(1).split("/")) {
+                    resolved = resolved.path(segment.replace("~1", "/").replace("~0", "~"));
+                }
+            }
+            return resolved.isMissingNode() ? pathItem : resolved;
         }
 
         void registerScenario(E2EScenario scenario, String testClass, String testMethod, Optional<Throwable> failure) {

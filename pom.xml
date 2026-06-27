@@ -119,6 +119,7 @@
                 <targetPath>static/api-contract</targetPath>
                 <includes>
                     <include>openapi.yaml</include>
+                    <include>paths/**</include>
                     <include>components/**</include>
                 </includes>
             </resource>
