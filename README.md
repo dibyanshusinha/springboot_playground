@@ -12,7 +12,7 @@ A production-minded REST API with a product catalog module as the first sample A
 - PostgreSQL for local development, tests, and runtime profiles
 - Flyway database migrations
 - OpenAPI Generator
-- Springdoc OpenAPI / Swagger UI
+- Packaged Swagger UI from the Product API spec
 - Spring Boot Actuator
 - JUnit 5 and MockMvc
 

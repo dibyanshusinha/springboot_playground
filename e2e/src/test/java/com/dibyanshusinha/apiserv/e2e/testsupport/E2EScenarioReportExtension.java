@@ -69,7 +69,7 @@ public class E2EScenarioReportExtension implements BeforeAllCallback, AfterTestE
     static final class E2EReport implements ExtensionContext.Store.CloseableResource {
 
         private static final Set<String> HTTP_METHODS = Set.of("get", "post", "put", "delete", "patch");
-        private static final String OPENAPI_CONTRACT_PATH = "/api-contract/runtime-openapi.yaml";
+        private static final String OPENAPI_CONTRACT_PATH = "/api-contract/openapi.yaml";
         private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
         private final HttpClient httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(5))
