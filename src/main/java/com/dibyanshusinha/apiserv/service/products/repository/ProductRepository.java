@@ -16,6 +16,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 @Repository
@@ -68,7 +69,7 @@ public class ProductRepository {
 
     public Optional<ProductRow> findById(Long id) {
         List<ProductRow> products = jdbcTemplate.query(ProductSql.FIND_BY_ID,
-                Map.of("id", id),
+                Objects.requireNonNull(Map.of("id", id)),
                 ProductRepository::mapProduct);
         return Optional.ofNullable(DataAccessUtils.singleResult(products));
     }
@@ -78,7 +79,7 @@ public class ProductRepository {
         int offset = page * size;
 
         List<ProductRow> products = jdbcTemplate.query(ProductSql.findPageOrderedBy(sortField, direction),
-                Map.of("limit", size, "offset", offset),
+                Objects.requireNonNull(Map.of("limit", size, "offset", offset)),
                 ProductRepository::mapProduct);
 
         int totalPages = totalElements == 0 ? 0 : (int) Math.ceil((double) totalElements / size);
@@ -89,7 +90,7 @@ public class ProductRepository {
     public boolean existsBySku(String sku) {
         Boolean exists = jdbcTemplate.queryForObject(
                 ProductSql.EXISTS_BY_SKU,
-                Map.of("sku", sku),
+                Objects.requireNonNull(Map.of("sku", sku)),
                 Boolean.class);
         return Boolean.TRUE.equals(exists);
     }
@@ -97,7 +98,7 @@ public class ProductRepository {
     public boolean existsBySkuAndIdNot(String sku, Long id) {
         Boolean exists = jdbcTemplate.queryForObject(
                 ProductSql.EXISTS_BY_SKU_AND_ID_NOT,
-                Map.of("sku", sku, "id", id),
+                Objects.requireNonNull(Map.of("sku", sku, "id", id)),
                 Boolean.class);
         return Boolean.TRUE.equals(exists);
     }
@@ -107,15 +108,15 @@ public class ProductRepository {
     }
 
     public void deleteById(Long id) {
-        jdbcTemplate.update(ProductSql.DELETE_BY_ID, Map.of("id", id));
+        jdbcTemplate.update(ProductSql.DELETE_BY_ID, Objects.requireNonNull(Map.of("id", id)));
     }
 
     public void deleteAll() {
-        jdbcTemplate.update(ProductSql.DELETE_ALL, Map.of());
+        jdbcTemplate.update(ProductSql.DELETE_ALL, Objects.requireNonNull(Map.of()));
     }
 
     private long count() {
-        Long count = jdbcTemplate.queryForObject(ProductSql.COUNT, Map.of(), Long.class);
+        Long count = jdbcTemplate.queryForObject(ProductSql.COUNT, Objects.requireNonNull(Map.of()), Long.class);
         return count == null ? 0 : count;
     }
 
