@@ -2,10 +2,11 @@ package com.dibyanshusinha.apiserv.service.products.exception;
 
 import com.dibyanshusinha.apiserv.exception.ApiException;
 import org.springframework.http.HttpStatus;
+import org.springframework.lang.NonNull;
 
 public class ProductException extends ApiException {
 
-    private ProductException(HttpStatus status, String title, String message) {
+    private ProductException(@NonNull HttpStatus status, String title, String message) {
         super(status, title, message);
     }
 

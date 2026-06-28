@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -113,7 +114,7 @@ public class IdempotencyAspectTest {
         Map<String, Object> cachedMap = new HashMap<>();
         cachedMap.put("response_status", 200);
         cachedMap.put("response_body", "\"hello-world\"");
-        when(jdbcTemplate.queryForMap(anyString(), anyMap())).thenReturn(cachedMap);
+        when(jdbcTemplate.queryForMap(anyString(), any(SqlParameterSource.class))).thenReturn(cachedMap);
 
         // Mock method signature returning ResponseEntity<String>
         MethodSignature signature = mock(MethodSignature.class);
@@ -141,7 +142,7 @@ public class IdempotencyAspectTest {
         Map<String, Object> cachedMap1 = new HashMap<>();
         cachedMap1.put("response_status", 204);
         cachedMap1.put("response_body", "");
-        when(jdbcTemplate.queryForMap(anyString(), anyMap())).thenReturn(cachedMap1);
+        when(jdbcTemplate.queryForMap(anyString(), any(SqlParameterSource.class))).thenReturn(cachedMap1);
 
         MethodSignature signature = mock(MethodSignature.class);
         Method method = IdempotencyAspectTest.class.getMethod("dummyVoidMethod");
@@ -156,7 +157,7 @@ public class IdempotencyAspectTest {
         Map<String, Object> cachedMap2 = new HashMap<>();
         cachedMap2.put("response_status", 204);
         cachedMap2.put("response_body", null);
-        when(jdbcTemplate.queryForMap(anyString(), anyMap())).thenReturn(cachedMap2);
+        when(jdbcTemplate.queryForMap(anyString(), any(SqlParameterSource.class))).thenReturn(cachedMap2);
 
         Object result2 = aspect.handleIdempotency(joinPoint);
         assertThat(result2).isInstanceOf(ResponseEntity.class);
@@ -166,7 +167,7 @@ public class IdempotencyAspectTest {
         Map<String, Object> cachedMap3 = new HashMap<>();
         cachedMap3.put("response_status", 204);
         cachedMap3.put("response_body", "{}");
-        when(jdbcTemplate.queryForMap(anyString(), anyMap())).thenReturn(cachedMap3);
+        when(jdbcTemplate.queryForMap(anyString(), any(SqlParameterSource.class))).thenReturn(cachedMap3);
 
         Object result3 = aspect.handleIdempotency(joinPoint);
         assertThat(result3).isInstanceOf(ResponseEntity.class);
@@ -183,7 +184,7 @@ public class IdempotencyAspectTest {
         Map<String, Object> cachedMap = new HashMap<>();
         cachedMap.put("response_status", 200);
         cachedMap.put("response_body", "raw-value");
-        when(jdbcTemplate.queryForMap(anyString(), anyMap())).thenReturn(cachedMap);
+        when(jdbcTemplate.queryForMap(anyString(), any(SqlParameterSource.class))).thenReturn(cachedMap);
 
         MethodSignature signature = mock(MethodSignature.class);
         Method method = IdempotencyAspectTest.class.getMethod("dummyNonResponseEntityMethod");
@@ -205,7 +206,7 @@ public class IdempotencyAspectTest {
         when(request.getRequestURI()).thenReturn("/v1/products");
 
         // Cache miss
-        when(jdbcTemplate.queryForMap(anyString(), anyMap())).thenThrow(new EmptyResultDataAccessException(1));
+        when(jdbcTemplate.queryForMap(anyString(), any(SqlParameterSource.class))).thenThrow(new EmptyResultDataAccessException(1));
 
         // Insert throws duplicate key exception
         when(jdbcTemplate.update(anyString(), any(MapSqlParameterSource.class)))
@@ -224,7 +225,7 @@ public class IdempotencyAspectTest {
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
         when(request.getHeader("Idempotency-Key")).thenReturn("test-key");
 
-        when(jdbcTemplate.queryForMap(anyString(), anyMap())).thenThrow(new EmptyResultDataAccessException(1));
+        when(jdbcTemplate.queryForMap(anyString(), any(SqlParameterSource.class))).thenThrow(new EmptyResultDataAccessException(1));
         when(joinPoint.proceed()).thenThrow(new RuntimeException("business exception"));
 
         assertThatThrownBy(() -> aspect.handleIdempotency(joinPoint))
@@ -232,7 +233,8 @@ public class IdempotencyAspectTest {
                 .hasMessage("business exception");
 
         // Verify key is deleted
-        verify(jdbcTemplate).update(eq("DELETE FROM idempotency_keys WHERE key_value = :key"), eq(Map.of("key", "test-key")));
+        verify(jdbcTemplate).update(eq("DELETE FROM idempotency_keys WHERE key_value = :key"),
+                argThat((MapSqlParameterSource p) -> "test-key".equals(p.getValue("key"))));
     }
 
     @Test
@@ -240,7 +242,7 @@ public class IdempotencyAspectTest {
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
         when(request.getHeader("Idempotency-Key")).thenReturn("test-key");
 
-        when(jdbcTemplate.queryForMap(anyString(), anyMap())).thenThrow(new EmptyResultDataAccessException(1));
+        when(jdbcTemplate.queryForMap(anyString(), any(SqlParameterSource.class))).thenThrow(new EmptyResultDataAccessException(1));
         
         ResponseEntity<String> response = ResponseEntity.ok("my-response-body");
         when(joinPoint.proceed()).thenReturn(response);
@@ -258,7 +260,7 @@ public class IdempotencyAspectTest {
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
         when(request.getHeader("Idempotency-Key")).thenReturn("test-key");
 
-        when(jdbcTemplate.queryForMap(anyString(), anyMap())).thenThrow(new EmptyResultDataAccessException(1));
+        when(jdbcTemplate.queryForMap(anyString(), any(SqlParameterSource.class))).thenThrow(new EmptyResultDataAccessException(1));
         when(joinPoint.proceed()).thenReturn("plain-string");
 
         Object result = aspect.handleIdempotency(joinPoint);
@@ -280,7 +282,7 @@ public class IdempotencyAspectTest {
         Map<String, Object> cachedMap = new HashMap<>();
         cachedMap.put("response_status", 200);
         cachedMap.put("response_body", "\"raw-body\"");
-        when(jdbcTemplate.queryForMap(anyString(), anyMap())).thenReturn(cachedMap);
+        when(jdbcTemplate.queryForMap(anyString(), any(SqlParameterSource.class))).thenReturn(cachedMap);
 
         MethodSignature signature = mock(MethodSignature.class);
         Method method = IdempotencyAspectTest.class.getMethod("dummyRawMethod");
@@ -303,7 +305,7 @@ public class IdempotencyAspectTest {
         Map<String, Object> cachedMap = new HashMap<>();
         cachedMap.put("response_status", 200);
         cachedMap.put("response_body", "\"wild-body\"");
-        when(jdbcTemplate.queryForMap(anyString(), anyMap())).thenReturn(cachedMap);
+        when(jdbcTemplate.queryForMap(anyString(), any(SqlParameterSource.class))).thenReturn(cachedMap);
 
         MethodSignature signature = mock(MethodSignature.class);
         Method method = IdempotencyAspectTest.class.getMethod("dummyWildcardMethod");
@@ -323,7 +325,7 @@ public class IdempotencyAspectTest {
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
         when(request.getHeader("Idempotency-Key")).thenReturn("test-key");
 
-        when(jdbcTemplate.queryForMap(anyString(), anyMap())).thenThrow(new EmptyResultDataAccessException(1));
+        when(jdbcTemplate.queryForMap(anyString(), any(SqlParameterSource.class))).thenThrow(new EmptyResultDataAccessException(1));
         
         ResponseEntity<Void> response = ResponseEntity.noContent().build();
         when(joinPoint.proceed()).thenReturn(response);

@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.lang.NonNull;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
@@ -79,12 +80,12 @@ public class ApiExceptionHandler {
         return problem(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error", "An unexpected error occurred.", request);
     }
 
-    private ResponseEntity<ErrorResponse> problem(HttpStatus status, String title, String detail, HttpServletRequest request) {
+    private ResponseEntity<ErrorResponse> problem(@NonNull HttpStatus status, String title, String detail, HttpServletRequest request) {
         return ResponseEntity.status(status)
                 .body(errorResponse(status, title, detail, request));
     }
 
-    private ErrorResponse errorResponse(HttpStatus status, String title, String detail, HttpServletRequest request) {
+    private ErrorResponse errorResponse(@NonNull HttpStatus status, String title, String detail, HttpServletRequest request) {
         return new ErrorResponse(
                 title,
                 status.value(),

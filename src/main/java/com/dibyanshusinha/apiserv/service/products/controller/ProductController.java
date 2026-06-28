@@ -27,7 +27,7 @@ public class ProductController implements ProductsApi {
     public ResponseEntity<ProductResponse> createProduct(ProductCreateRequest productCreateRequest, String xCorrelationId, java.util.UUID idempotencyKey) {
         ProductResponse response = productService.createProduct(productCreateRequest);
         return ResponseEntity
-                .created(URI.create(ProductConstants.API_PATH_WITH_TRAILING_SLASH + response.getId()))
+                .created(java.util.Objects.requireNonNull(URI.create(ProductConstants.API_PATH_WITH_TRAILING_SLASH + response.getId())))
                 .eTag(String.valueOf(response.getVersion()))
                 .body(response);
     }

@@ -57,7 +57,7 @@ public interface ProductMapper {
         }
 
         java.util.Set<String> fields = java.util.Arrays.stream(updateMask.split(","))
-                .map(String::trim)
+                .map(s -> s.trim())
                 .collect(java.util.stream.Collectors.toSet());
 
         if (fields.contains("name")) product.setName(request.getName());

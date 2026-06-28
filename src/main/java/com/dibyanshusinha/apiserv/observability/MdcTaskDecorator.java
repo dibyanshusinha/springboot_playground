@@ -1,6 +1,7 @@
 package com.dibyanshusinha.apiserv.observability;
 
 import org.slf4j.MDC;
+import org.springframework.lang.NonNull;
 import org.springframework.core.task.TaskDecorator;
 
 import java.util.Map;
@@ -8,7 +9,8 @@ import java.util.Map;
 public class MdcTaskDecorator implements TaskDecorator {
 
     @Override
-    public Runnable decorate(Runnable runnable) {
+    @NonNull
+    public Runnable decorate(@NonNull Runnable runnable) {
         Map<String, String> contextMap = MDC.getCopyOfContextMap();
         return () -> {
             try {

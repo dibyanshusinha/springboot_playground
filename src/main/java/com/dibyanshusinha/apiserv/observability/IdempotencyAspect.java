@@ -9,7 +9,6 @@ import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -95,8 +94,7 @@ public class IdempotencyAspect {
                             HttpStatus.CONFLICT.value(),
                             "A request with the same idempotency key is already in progress or has completed.",
                             request.getRequestURI(),
-                            CorrelationId.resolve(request.getHeader(CorrelationId.HEADER_NAME)))
-                    );
+                            CorrelationId.resolve(request.getHeader(CorrelationId.HEADER_NAME))));
         }
 
         // 3. Proceed with execution
@@ -124,7 +122,7 @@ public class IdempotencyAspect {
     private Map<String, Object> fetchKey(String key) {
         String sql = "SELECT response_status, response_body FROM idempotency_keys WHERE key_value = :key";
         try {
-            return jdbcTemplate.queryForMap(sql, Map.of("key", key));
+            return jdbcTemplate.queryForMap(sql, new MapSqlParameterSource("key", key));
         } catch (org.springframework.dao.EmptyResultDataAccessException e) {
             return null;
         }
@@ -132,7 +130,7 @@ public class IdempotencyAspect {
 
     private void insertKey(String key) {
         String sql = "INSERT INTO idempotency_keys (key_value, response_status, response_body, created_at) " +
-                     "VALUES (:key, 201, NULL, :now)";
+                "VALUES (:key, 201, NULL, :now)";
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("key", key)
                 .addValue("now", Timestamp.from(Instant.now()));
@@ -150,6 +148,6 @@ public class IdempotencyAspect {
 
     private void deleteKey(String key) {
         String sql = "DELETE FROM idempotency_keys WHERE key_value = :key";
-        jdbcTemplate.update(sql, Map.of("key", key));
+        jdbcTemplate.update(sql, new MapSqlParameterSource("key", key));
     }
 }
